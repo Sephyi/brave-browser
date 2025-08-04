@@ -1,6 +1,29 @@
-# Tab Focus Mode Local Model - Code Examples
+# Brave Browser Feature Examples
 
-This directory contains example implementations demonstrating the privacy-preserving local model feature for Tab Focus Mode. These examples show the architectural patterns and code structure that would be implemented in brave-core.
+This directory contains example implementations demonstrating various features for the Brave browser. These examples show the architectural patterns and code structure that would be implemented in brave-core.
+
+## Features
+
+### Tab Focus Mode Local Model
+Privacy-preserving local model feature for Tab Focus Mode that processes tab data entirely on-device.
+
+### Immersive Fullscreen Mode
+Distraction-free browsing experience with auto-hiding UI elements in fullscreen mode, featuring smart reveal on mouse hover and focus-aware behavior.
+
+**Key Files:**
+- `immersive_fullscreen/immersive_fullscreen_controller.h/.cc` - Main controller implementation
+- `immersive_fullscreen/immersive_fullscreen_settings.tsx` - React settings component  
+- `immersive_fullscreen/immersive_fullscreen.css` - Smooth animation styles
+- `immersive_fullscreen/event_handlers.js` - JavaScript event integration
+- `immersive_fullscreen/pref_names.h` - Preference definitions
+
+**Features:**
+- Auto-hide UI elements (toolbar, tabs, bookmarks) in fullscreen
+- Smart reveal on mouse hover at screen top edge
+- Address bar focus awareness  
+- Configurable timing and sensitivity
+- Smooth CSS animations with hardware acceleration
+- Safari-like UX behavior on macOS
 
 ## Overview
 
