@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     name: Build Brave Browser for Windows 11 x64
-    runs-on: github-runner-windows
+    runs-on: self-hosted
     timeout-minutes: 360 # building Brave may take several hours
 
     steps:
