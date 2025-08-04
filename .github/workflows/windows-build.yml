@@ -1,0 +1,48 @@
+name: Manual Windows 11 x64 Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Brave Browser for Windows 11 x64
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Git and Build Tools
+        run: |
+          choco install -y visualstudio2022buildtools visualstudio2022-workload-vctools ninja
+
+      - name: Install Depot Tools
+        run: |
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          echo "$PWD/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Sync Chromium dependencies
+        run: |
+          python3 scripts/commands/sync.py --nohooks --platform win64
+        env:
+          DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+
+      - name: Build Brave (Release)
+        run: |
+          python3 scripts/commands/build.py --platform win64 --release
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: brave-windows-x64-release
+          path: out/Release/Brave.exe
