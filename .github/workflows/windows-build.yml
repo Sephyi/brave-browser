@@ -9,7 +9,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout this repository
         uses: actions/checkout@v4
 
       - name: Set up Python 3.x
@@ -22,27 +22,37 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Git and Build Tools
+      - name: Install Chocolatey dependencies (Visual Studio Build Tools, Ninja)
         run: |
           choco install -y visualstudio2022buildtools visualstudio2022-workload-vctools ninja
 
-      - name: Install Depot Tools
+      - name: Set up depot_tools in PATH
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           echo "$PWD/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Sync Chromium dependencies
+      - name: Fetch Brave source (official upstream)
         run: |
-          python3 scripts/commands/sync.py --nohooks --platform win64
-        env:
-          DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+          mkdir brave-src
+          cd brave-src
+          fetch --nohooks brave
+        shell: bash
 
-      - name: Build Brave (Release)
+      - name: Run hooks (gclient)
         run: |
-          python3 scripts/commands/build.py --platform win64 --release
+          cd brave-src
+          gclient runhooks
+        shell: bash
 
-      - name: Upload Build Artifact
+      - name: Build Brave (Release, x64)
+        run: |
+          cd brave-src/src
+          gn gen out/Release --args="is_official_build=true is_component_build=false brave_channel=\"stable\" target_cpu=\"x64\""
+          ninja -C out/Release brave
+        shell: bash
+
+      - name: Upload Brave Release binary
         uses: actions/upload-artifact@v4
         with:
           name: brave-windows-x64-release
-          path: out/Release/Brave.exe
+          path: brave-src/src/out/Release/brave.exe
