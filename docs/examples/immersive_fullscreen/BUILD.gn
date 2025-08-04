@@ -1,0 +1,355 @@
+# Copyright (c) 2025 The Brave Authors. All rights reserved.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at https://mozilla.org/MPL/2.0/.
+
+# Example BUILD.gn file for Immersive Fullscreen Mode
+# This would be integrated into brave-core's build system
+
+import("//brave/build/config.gni")
+
+# Main immersive fullscreen component
+source_set("immersive_fullscreen") {
+  sources = [
+    "immersive_fullscreen_controller.cc",
+    "immersive_fullscreen_controller.h",
+    "pref_names.h",
+  ]
+
+  deps = [
+    "//base",
+    "//chrome/browser/profiles",
+    "//chrome/browser/ui",
+    "//chrome/browser/ui/views",
+    "//chrome/browser/ui/views/frame",
+    "//chrome/browser/ui/views/tabs",
+    "//chrome/browser/ui/views/toolbar",
+    "//chrome/browser/ui/views/bookmarks",
+    "//chrome/common",
+    "//components/prefs",
+    "//content/public/browser",
+    "//ui/display",
+    "//ui/gfx",
+    "//ui/gfx/animation",
+    "//ui/views",
+    "//ui/views/animation",
+  ]
+
+  public_deps = [
+    "//base",
+    "//ui/gfx/geometry",
+  ]
+
+  if (is_mac) {
+    # macOS-specific implementations
+    sources += [
+      "immersive_fullscreen_controller_mac.mm",
+    ]
+    frameworks = [
+      "AppKit.framework",
+      "Foundation.framework",
+    ]
+  }
+
+  if (is_win) {
+    # Windows-specific implementations
+    sources += [
+      "immersive_fullscreen_controller_win.cc",
+    ]
+  }
+
+  if (is_linux) {
+    # Linux-specific implementations
+    sources += [
+      "immersive_fullscreen_controller_linux.cc",
+    ]
+  }
+}
+
+# Settings UI component
+static_library("immersive_fullscreen_settings") {
+  sources = [
+    "immersive_fullscreen_settings.tsx",
+  ]
+
+  deps = [
+    "//brave/components/brave_webtorrent/extension/webtorrent_scripts",
+    "//chrome/browser/ui/webui/settings",
+    "//ui/webui",
+  ]
+}
+
+# CSS resources
+grit("immersive_fullscreen_resources") {
+  source = "immersive_fullscreen_resources.grd"
+  outputs = [
+    "grit/immersive_fullscreen_resources.h",
+    "immersive_fullscreen_resources.pak",
+  ]
+}
+
+# Unit tests
+source_set("immersive_fullscreen_unittests") {
+  testonly = true
+  
+  sources = [
+    "immersive_fullscreen_controller_unittest.cc",
+  ]
+
+  deps = [
+    ":immersive_fullscreen",
+    "//base/test:test_support",
+    "//chrome/browser/ui/views/frame",
+    "//chrome/test:test_support",
+    "//components/prefs:test_support",
+    "//content/public/test:test_support",
+    "//content/test:test_support",
+    "//testing/gtest",
+    "//testing/gmock",
+    "//ui/gfx:test_support",
+    "//ui/views:test_support",
+  ]
+}
+
+# Browser tests
+source_set("immersive_fullscreen_browsertests") {
+  testonly = true
+  
+  sources = [
+    "immersive_fullscreen_browsertest.cc",
+  ]
+
+  deps = [
+    ":immersive_fullscreen",
+    "//chrome/browser",
+    "//chrome/browser/ui",
+    "//chrome/browser/ui/views",
+    "//chrome/test:test_support",
+    "//content/public/test:test_support",
+    "//testing/gtest",
+  ]
+
+  data = [
+    "//brave/test/data/immersive_fullscreen/",
+  ]
+}
+
+# Performance tests
+source_set("immersive_fullscreen_perftests") {
+  testonly = true
+  
+  sources = [
+    "immersive_fullscreen_perftest.cc",
+  ]
+
+  deps = [
+    ":immersive_fullscreen",
+    "//base/test:test_support",
+    "//chrome/test:test_support",
+    "//testing/gtest",
+    "//testing/perf",
+  ]
+}
+
+# Integration with main browser targets
+if (is_component_build) {
+  # For component builds, include in main browser component
+  group("immersive_fullscreen_component") {
+    deps = [
+      ":immersive_fullscreen",
+      ":immersive_fullscreen_settings",
+      ":immersive_fullscreen_resources",
+    ]
+  }
+} else {
+  # For static builds, create separate static library
+  static_library("immersive_fullscreen_lib") {
+    deps = [
+      ":immersive_fullscreen",
+      ":immersive_fullscreen_settings", 
+      ":immersive_fullscreen_resources",
+    ]
+  }
+}
+
+# Feature flag definition
+if (enable_immersive_fullscreen) {
+  defines = [ "ENABLE_IMMERSIVE_FULLSCREEN" ]
+}
+
+# Test group for all immersive fullscreen tests
+group("immersive_fullscreen_tests") {
+  testonly = true
+  deps = [
+    ":immersive_fullscreen_unittests",
+    ":immersive_fullscreen_browsertests",
+    ":immersive_fullscreen_perftests",
+  ]
+}
+
+# Documentation and examples
+copy("immersive_fullscreen_docs") {
+  sources = [
+    "README.md",
+    "event_handlers.js",
+    "immersive_fullscreen.css",
+  ]
+  outputs = [
+    "$target_gen_dir/docs/{{source_file_part}}",
+  ]
+}
+
+# Feature integration points
+source_set("immersive_fullscreen_integration") {
+  sources = [
+    "//chrome/browser/ui/views/frame/browser_view_integration.cc",
+    "//chrome/browser/ui/views/frame/browser_view_integration.h",
+  ]
+
+  deps = [
+    ":immersive_fullscreen",
+    "//chrome/browser/ui/views/frame",
+  ]
+}
+
+# Preference registration
+source_set("immersive_fullscreen_prefs") {
+  sources = [
+    "immersive_fullscreen_pref_registration.cc",
+    "immersive_fullscreen_pref_registration.h",
+  ]
+
+  deps = [
+    ":immersive_fullscreen",
+    "//components/prefs",
+    "//chrome/browser/profiles",
+  ]
+}
+
+# JavaScript integration
+js_library("immersive_fullscreen_js") {
+  sources = [
+    "event_handlers.js",
+  ]
+  
+  deps = [
+    "//ui/webui/resources/js:cr",
+  ]
+}
+
+# Platform-specific implementations
+if (is_mac) {
+  source_set("immersive_fullscreen_mac") {
+    sources = [
+      "immersive_fullscreen_controller_mac.mm",
+      "immersive_fullscreen_mac_util.h",
+      "immersive_fullscreen_mac_util.mm",
+    ]
+    
+    deps = [
+      ":immersive_fullscreen",
+      "//ui/base",
+    ]
+    
+    frameworks = [
+      "AppKit.framework",
+      "CoreGraphics.framework",
+    ]
+  }
+}
+
+if (is_win) {
+  source_set("immersive_fullscreen_win") {
+    sources = [
+      "immersive_fullscreen_controller_win.cc",
+      "immersive_fullscreen_win_util.cc",
+      "immersive_fullscreen_win_util.h",
+    ]
+    
+    deps = [
+      ":immersive_fullscreen",
+      "//ui/base",
+      "//ui/gfx",
+    ]
+    
+    libs = [
+      "user32.lib",
+      "dwmapi.lib",
+    ]
+  }
+}
+
+if (use_x11 || use_ozone) {
+  source_set("immersive_fullscreen_linux") {
+    sources = [
+      "immersive_fullscreen_controller_linux.cc",
+      "immersive_fullscreen_linux_util.cc",
+      "immersive_fullscreen_linux_util.h",
+    ]
+    
+    deps = [
+      ":immersive_fullscreen",
+      "//ui/base",
+      "//ui/gfx/x",
+    ]
+    
+    if (use_x11) {
+      deps += [ "//ui/gfx/x" ]
+    }
+  }
+}
+
+# Accessibility support
+source_set("immersive_fullscreen_a11y") {
+  sources = [
+    "immersive_fullscreen_accessibility.cc",
+    "immersive_fullscreen_accessibility.h",
+  ]
+  
+  deps = [
+    ":immersive_fullscreen",
+    "//ui/accessibility",
+    "//ui/base",
+  ]
+}
+
+# Metrics and telemetry
+source_set("immersive_fullscreen_metrics") {
+  sources = [
+    "immersive_fullscreen_metrics.cc",
+    "immersive_fullscreen_metrics.h",
+  ]
+  
+  deps = [
+    ":immersive_fullscreen",
+    "//base",
+    "//components/metrics",
+  ]
+}
+
+# All immersive fullscreen components
+group("all") {
+  deps = [
+    ":immersive_fullscreen",
+    ":immersive_fullscreen_settings",
+    ":immersive_fullscreen_resources",
+    ":immersive_fullscreen_integration",
+    ":immersive_fullscreen_prefs",
+    ":immersive_fullscreen_js",
+    ":immersive_fullscreen_a11y",
+    ":immersive_fullscreen_metrics",
+    ":immersive_fullscreen_docs",
+  ]
+  
+  if (is_mac) {
+    deps += [ ":immersive_fullscreen_mac" ]
+  }
+  
+  if (is_win) {
+    deps += [ ":immersive_fullscreen_win" ]
+  }
+  
+  if (use_x11 || use_ozone) {
+    deps += [ ":immersive_fullscreen_linux" ]
+  }
+}

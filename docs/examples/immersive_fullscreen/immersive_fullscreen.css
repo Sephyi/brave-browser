@@ -1,0 +1,238 @@
+/* Copyright (c) 2025 The Brave Authors. All rights reserved.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+/* Immersive Fullscreen Mode Animations and Styles */
+
+/* Base styles for immersive mode UI elements */
+.immersive-fullscreen-mode {
+  /* Enable hardware acceleration for smooth animations */
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+/* Toolbar animations in immersive mode */
+.immersive-fullscreen-mode .toolbar {
+  transition: transform 300ms cubic-bezier(0.4, 0.0, 0.2, 1),
+              opacity 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-origin: top center;
+}
+
+.immersive-fullscreen-mode .toolbar.immersive-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.immersive-fullscreen-mode .toolbar.immersive-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Tab strip animations in immersive mode */
+.immersive-fullscreen-mode .tab-strip {
+  transition: transform 300ms cubic-bezier(0.4, 0.0, 0.2, 1),
+              opacity 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-origin: top center;
+}
+
+.immersive-fullscreen-mode .tab-strip.immersive-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.immersive-fullscreen-mode .tab-strip.immersive-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Bookmarks bar animations in immersive mode */
+.immersive-fullscreen-mode .bookmarks-bar {
+  transition: transform 300ms cubic-bezier(0.4, 0.0, 0.2, 1),
+              opacity 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-origin: top center;
+}
+
+.immersive-fullscreen-mode .bookmarks-bar.immersive-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.immersive-fullscreen-mode .bookmarks-bar.immersive-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Top edge hover indicator */
+.immersive-fullscreen-mode .top-edge-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(to bottom, 
+                              rgba(255, 255, 255, 0.1) 0%, 
+                              rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease-in-out;
+  z-index: 9999;
+}
+
+.immersive-fullscreen-mode .top-edge-indicator.visible {
+  opacity: 1;
+}
+
+/* Dark theme adjustments */
+@media (prefers-color-scheme: dark) {
+  .immersive-fullscreen-mode .top-edge-indicator {
+    background: linear-gradient(to bottom, 
+                                rgba(255, 255, 255, 0.05) 0%, 
+                                rgba(255, 255, 255, 0) 100%);
+  }
+}
+
+/* Smooth reveal animation with stagger */
+.immersive-fullscreen-mode.revealing .tab-strip {
+  transition-delay: 0ms;
+}
+
+.immersive-fullscreen-mode.revealing .toolbar {
+  transition-delay: 50ms;
+}
+
+.immersive-fullscreen-mode.revealing .bookmarks-bar {
+  transition-delay: 100ms;
+}
+
+/* Fast hide animation */
+.immersive-fullscreen-mode.hiding .tab-strip,
+.immersive-fullscreen-mode.hiding .toolbar,
+.immersive-fullscreen-mode.hiding .bookmarks-bar {
+  transition-duration: 200ms;
+  transition-delay: 0ms;
+}
+
+/* Address bar focus state in immersive mode */
+.immersive-fullscreen-mode .omnibox:focus-within {
+  /* Ensure toolbar stays visible when address bar is focused */
+  position: relative;
+  z-index: 1000;
+}
+
+.immersive-fullscreen-mode .omnibox:focus-within ~ .toolbar {
+  /* Keep toolbar visible when address bar has focus */
+  transform: translateY(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Responsive adjustments for different screen sizes */
+@media (max-width: 768px) {
+  .immersive-fullscreen-mode .toolbar,
+  .immersive-fullscreen-mode .tab-strip,
+  .immersive-fullscreen-mode .bookmarks-bar {
+    /* Faster animations on smaller screens */
+    transition-duration: 200ms;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .immersive-fullscreen-mode .top-edge-indicator {
+    background: linear-gradient(to bottom, 
+                                rgba(255, 255, 255, 0.3) 0%, 
+                                rgba(255, 255, 255, 0) 100%);
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .immersive-fullscreen-mode .toolbar,
+  .immersive-fullscreen-mode .tab-strip,
+  .immersive-fullscreen-mode .bookmarks-bar,
+  .immersive-fullscreen-mode .top-edge-indicator {
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* Custom properties for dynamic configuration */
+.immersive-fullscreen-mode {
+  --immersive-animation-duration: 300ms;
+  --immersive-animation-easing: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --immersive-top-edge-height: 5px;
+  --immersive-stagger-delay: 50ms;
+}
+
+/* Utility classes for JavaScript control */
+.immersive-fullscreen-enabled {
+  /* Applied to body when immersive mode is active */
+}
+
+.immersive-ui-revealed {
+  /* Applied when UI is temporarily revealed */
+}
+
+.immersive-ui-pinned {
+  /* Applied when UI is pinned visible */
+}
+
+.immersive-mouse-hover {
+  /* Applied when mouse is hovering in top edge */
+}
+
+/* Animation for the reveal/hide transition with custom timing */
+.immersive-fullscreen-mode .ui-element {
+  transition: transform var(--immersive-animation-duration) var(--immersive-animation-easing),
+              opacity var(--immersive-animation-duration) var(--immersive-animation-easing);
+}
+
+/* Safari-like smooth reveal effect */
+.immersive-fullscreen-mode.safari-style .toolbar,
+.immersive-fullscreen-mode.safari-style .tab-strip {
+  transition: transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced visual feedback for interactions */
+.immersive-fullscreen-mode .toolbar:hover,
+.immersive-fullscreen-mode .tab-strip:hover {
+  /* Subtle highlight when hovering over revealed UI */
+  background-color: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+}
+
+/* Accessibility: Focus indicators remain visible */
+.immersive-fullscreen-mode *:focus-visible {
+  outline: 2px solid #0066CC;
+  outline-offset: 2px;
+  /* Ensure focus indicators are always visible */
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}
+
+/* Custom scrollbar in immersive mode */
+.immersive-fullscreen-mode::-webkit-scrollbar {
+  width: 8px;
+}
+
+.immersive-fullscreen-mode::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.immersive-fullscreen-mode::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.immersive-fullscreen-mode::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
