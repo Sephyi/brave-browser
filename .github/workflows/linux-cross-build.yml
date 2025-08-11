@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-win:
-    runs-on: [self-hosted, linux, ubuntu-24.04]
+    runs-on: [self-hosted, linux]
 
     # Keep env simple here—no expressions
     env:
