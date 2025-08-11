@@ -2,33 +2,19 @@ name: Brave Windows cross-build (Linux runner)
 
 on:
   workflow_dispatch:
-    inputs:
-      configuration:
-        description: "GN/Ninja config (Debug or Release)"
-        required: true
-        default: "Release"
 
 jobs:
   build-win:
-    # your big 180-core box should be registered as a self-hosted runner
     runs-on: [self-hosted, linux, ubuntu-24.04]
 
+    # Keep env simple here—no expressions
     env:
-      # point depot_tools at your hosted VS+WinSDK toolchain zip directory
-      # e.g. https://my-bucket/toolchains/windows/   (must end with /)
       DEPOT_TOOLS_WIN_TOOLCHAIN: 1
       DEPOT_TOOLS_WIN_TOOLCHAIN_BASE_URL: ${{ secrets.WIN_TOOLCHAIN_BASE_URL }}
-
-      # hash for the packaged toolchain (from vs_toolchain.py). Example:
-      # GYP_MSVS_HASH_17_8_34241_0 = <hash>
-      # Put the exact env var name + value in Actions secrets and export it here.
-      GYP_MSVS_HASH: ${{ secrets.WIN_TOOLCHAIN_HASH }}   # see notes below
-
-      # speed-ups (optional but recommended)
-      CCACHE_DIR: ${{ runner.temp }}/.ccache
-      SCCACHE_DIR: ${{ runner.temp }}/.sccache
-      CHROMIUM_BUILDTOOLS_PATH: ""  # let gclient manage
-      PATH: ${{ github.workspace }}/depot_tools:${{ env.PATH }}
+      # We'll re-export the exact GYP_MSVS_HASH_* name later
+      WIN_TOOLCHAIN_HASH: ${{ secrets.WIN_TOOLCHAIN_HASH }}
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      SCCACHE_DIR: ${{ github.workspace }}/.sccache
 
     steps:
       - name: Prep packages
@@ -37,7 +23,7 @@ jobs:
           sudo apt-get install -y git python3 python3-venv ninja-build curl xz-utils \
               pkg-config build-essential lld clang cmake ccache
 
-      - name: Checkout Brave (monorepo bootstrap)
+      - name: Checkout Brave (brave-core)
         uses: actions/checkout@v4
         with:
           repository: brave/brave-core
@@ -47,12 +33,18 @@ jobs:
       - name: Fetch depot_tools
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          echo "$PWD/depot_tools" >> $GITHUB_PATH
+          # add depot_tools to PATH properly
+          echo "$PWD/depot_tools" >> "$GITHUB_PATH"
+
+      # Re-export the exact hash var name that Chromium expects
+      # Example: GYP_MSVS_HASH_17_8_34241_0
+      - name: Export GYP_MSVS_HASH_* env var
+        run: |
+          echo "GYP_MSVS_HASH_17_8_34241_0=${WIN_TOOLCHAIN_HASH}" >> "$GITHUB_ENV"
 
       - name: Configure gclient for Windows target
         working-directory: brave
         run: |
-          # Write .gclient with Windows target; brave’s scripts expect this shape
           cat > .gclient << 'EOF'
           solutions = [
             {
@@ -67,36 +59,24 @@ jobs:
           target_os = [ "win" ]
           EOF
 
-      - name: Bootstrap Brave/Chromium source (sync)
+      - name: Sync Chromium/Brave deps
         working-directory: brave
         run: |
-          # brave’s scripts (npm run init) ultimately call gclient; we’ll stay explicit
-          gclient sync --nohooks --with_branch_heads --with_tags -j$(nproc)
+          gclient sync --nohooks --with_branch_heads --with_tags -j"$(nproc)"
           gclient runhooks
 
-      - name: Prepare output dir and GN args
+      - name: GN args
         working-directory: brave/src
         run: |
           mkdir -p out/win
           cat > out/win/args.gn << 'EOF'
           target_os = "win"
-          target_cpu = "x64"        # or "arm64" if you want ARM64 Windows
-          is_debug = false          # set true if you picked Debug above
+          target_cpu = "x64"
+          is_debug = false
           is_component_build = false
           use_lld = true
           symbol_level = 1
-          # Speed up:
-          v8_enable_pointer_compression = true
-          # If you use sccache:
-          # cc_wrapper = "sccache"
           EOF
-
-      - name: (Optional) Setup sccache
-        run: |
-          curl -L https://github.com/mozilla/sccache/releases/latest/download/sccache-v0.7.4-x86_64-unknown-linux-musl.tar.gz \
-            | tar xz
-          echo "$PWD/sccache-v0.7.4-x86_64-unknown-linux-musl" >> $GITHUB_PATH
-          sccache --start-server || true
 
       - name: Generate Ninja files
         working-directory: brave/src
@@ -104,23 +84,11 @@ jobs:
 
       - name: Build Brave
         working-directory: brave/src
-        run: |
-          # Typical top-level target (adjust as Brave changes)
-          autoninja -C out/win brave
-
-      - name: Show build artifacts
-        working-directory: brave/src/out/win
-        run: |
-          ls -lah | sed -n '1,200p'
+        run: autoninja -C out/win brave
 
       - name: Archive artifacts
-        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: brave-windows-${{ github.event.inputs.configuration || 'Release' }}
+          name: brave-windows-unsigned
           path: brave/src/out/win/*
           if-no-files-found: warn
-
-      - name: (Optional) Stop sccache
-        if: always()
-        run: sccache --stop-server || true
